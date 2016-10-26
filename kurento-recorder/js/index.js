@@ -66,15 +66,15 @@ window.addEventListener('load', function(event) {
 function startRecording() {
   console.log("onClick");
 
-  var videoInput = document.getElementById("videoInput");
+  //var videoInput = document.getElementById("videoInput");
   var videoOutput = document.getElementById("videoOutput");
 
-  showSpinner(videoInput, videoOutput);
+  showSpinner(videoOutput);
 
   var stopRecordButton = document.getElementById("stop")
 
   var options = {
-    localVideo: videoInput,
+    //localVideo: videoInput,
     remoteVideo: videoOutput
   };
 
@@ -87,11 +87,17 @@ function startRecording() {
     console.log("Use freeice")
   }
 
-  webRtcPeer = kurentoUtils.WebRtcPeer.WebRtcPeerSendrecv(options, function(error)
+  webRtcPeer = kurentoUtils.WebRtcPeer.WebRtcPeerRecvonly(options, function(error)
   {
     if(error) return onError(error)
 
     this.generateOffer(onOffer)
+    this.peerConnection.addEventListener('iceconnectionstatechange', function(event){
+          if(webRtcPeer && webRtcPeer.peerConnection){
+            console.log("oniceconnectionstatechange -> " + webRtcPeer.peerConnection.iceConnectionState);
+            console.log('icegatheringstate -> ' + webRtcPeer.peerConnection.iceGatheringState);
+          }
+        });
   });
 
   function onOffer(error, offer) {
@@ -110,7 +116,8 @@ function startRecording() {
         var elements =
         [
           {type: 'RecorderEndpoint', params: {uri : args.file_uri}},
-          {type: 'WebRtcEndpoint', params: {}}
+          {type: 'WebRtcEndpoint', params: {}},
+          {type: 'WebRtcEndpoint', params: {uri : }}
         ]
 
         pipeline.create(elements, function(error, elements){
