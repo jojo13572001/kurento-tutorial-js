@@ -66,7 +66,7 @@ window.addEventListener('load', function(event) {
 function startRecording() {
   console.log("onClick");
 
-  //var videoInput = document.getElementById("videoInput");
+  var videoInput = document.getElementById("videoInput");
   var videoOutput = document.getElementById("videoOutput");
 
   showSpinner(videoOutput);
@@ -75,7 +75,8 @@ function startRecording() {
 
   var options = {
     //localVideo: videoInput,
-    remoteVideo: videoOutput
+    remoteVideo: videoOutput,
+    useEncodedMedia: false 
   };
 
   if (args.ice_servers) {
@@ -92,12 +93,6 @@ function startRecording() {
     if(error) return onError(error)
 
     this.generateOffer(onOffer)
-    this.peerConnection.addEventListener('iceconnectionstatechange', function(event){
-          if(webRtcPeer && webRtcPeer.peerConnection){
-            console.log("oniceconnectionstatechange -> " + webRtcPeer.peerConnection.iceConnectionState);
-            console.log('icegatheringstate -> ' + webRtcPeer.peerConnection.iceGatheringState);
-          }
-        });
   });
 
   function onOffer(error, offer) {
@@ -115,16 +110,20 @@ function startRecording() {
 
         var elements =
         [
-          {type: 'RecorderEndpoint', params: {uri : args.file_uri}},
           {type: 'WebRtcEndpoint', params: {}},
-          {type: 'WebRtcEndpoint', params: {uri : }}
+          //{type: 'PlayerEndpoint', params: {uri : "rtsp://54.199.182.145:8554/1.mpg"}},
+          {type: 'PlayerEndpoint', params: {uri : "rtsp://211.75.8.115:554/stream1", useEncodedMedia:false, mediaPipeline:pipeline}},
+          //{type: 'PlayerEndpoint', params: {uri : "rtsp://211.75.8.115:554/stream1"}},
+          //{type: 'PlayerEndpoint', params: {uri : "http://files.kurento.org/video/10sec/red.webm"}},
+          {type: 'RecorderEndpoint', params: {uri : args.file_uri}}
         ]
 
         pipeline.create(elements, function(error, elements){
           if (error) return onError(error);
 
-          var recorder = elements[0]
-          var webRtc   = elements[1]
+          var webRtc   = elements[0];
+          var player   = elements[1];
+          var recorder = elements[2];
 
           setIceCandidateCallbacks(webRtcPeer, webRtc, onError)
 
@@ -137,30 +136,40 @@ function startRecording() {
             webRtcPeer.processAnswer(answer);
           });
 
-          client.connect(webRtc, webRtc, recorder, function(error) {
+          client.connect(player,  recorder, function(error) {
+           if (error) return onError(error);
+	    
+           client.connect(player, webRtc, function(error) {
             if (error) return onError(error);
-
             console.log("Connected");
 
-            recorder.record(function(error) {
+            player.play(function(error) {
               if (error) return onError(error);
+		
+              console.log("play");
+	      
+              recorder.record(function(error) {
+              	if (error) return onError(error);
+              	console.log("record");
+                stopRecordButton.addEventListener("click", function(event){
+                	recorder.stop();
+                	player.stop();
+                	pipeline.release();
+                	webRtcPeer.dispose();
+                	//videoInput.src = "";
+                	videoOutput.src = "";
 
-              console.log("record");
+                	hideSpinner(videoOutput);
 
-              stopRecordButton.addEventListener("click", function(event){
-                recorder.stop();
-                pipeline.release();
-                webRtcPeer.dispose();
-                videoInput.src = "";
-                videoOutput.src = "";
-
-                hideSpinner(videoInput, videoOutput);
-
-                var playButton = document.getElementById('play');
-                playButton.addEventListener('click', startPlaying);
-              })
+                	var playButton = document.getElementById('play');
+                	playButton.addEventListener('click', startPlaying);
+                });
+	      });
+		
+	     });
             });
           });
+	  //-------------------------------------------
         });
       });
     });
@@ -176,7 +185,8 @@ function startPlaying()
   showSpinner(videoPlayer);
 
   var options = {
-    remoteVideo: videoPlayer
+    remoteVideo: videoPlayer,
+    useEncodedMedia: false 
   };
 
   if (args.ice_servers) {
