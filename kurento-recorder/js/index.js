@@ -30,7 +30,7 @@ var args = getopts(location.search,
   default:
   {
     ws_uri: 'ws://' + location.hostname + ':8888/kurento',
-    file_uri: 'file:///tmp/recorder_demo.webm', // file to be stored in media server
+    file_uri: 'file:///tmp/recorder_demo.mp4', // file to be stored in media server
     ice_servers: undefined
   }
 });
@@ -111,11 +111,13 @@ function startRecording() {
         var elements =
         [
           {type: 'WebRtcEndpoint', params: {}},
+          //{type: 'PlayerEndpoint', params: {uri : "rtsp://54.199.182.145:8554/480i.ts"}},
           //{type: 'PlayerEndpoint', params: {uri : "rtsp://54.199.182.145:8554/1.mpg"}},
-          {type: 'PlayerEndpoint', params: {uri : "rtsp://211.75.8.115:554/stream1", useEncodedMedia:false, mediaPipeline:pipeline}},
-          //{type: 'PlayerEndpoint', params: {uri : "rtsp://211.75.8.115:554/stream1"}},
+          //{type: 'PlayerEndpoint', params: {uri : "rtsp://211.75.8.115:554/stream1", useEncodedMedia:true, mediaPipeline:pipeline}},
+          {type: 'PlayerEndpoint', params: {uri : "rtsp://211.75.8.115:554/s1"}},
           //{type: 'PlayerEndpoint', params: {uri : "http://files.kurento.org/video/10sec/red.webm"}},
-          {type: 'RecorderEndpoint', params: {uri : args.file_uri}}
+          //{type: 'PlayerEndpoint', params: {uri : "rtsp://58.115.71.8:5554/camera"}},
+          {type: 'RecorderEndpoint', params: {uri : args.file_uri,mediaProfile: 'MP4_VIDEO_ONLY'}}
         ]
 
         pipeline.create(elements, function(error, elements){
@@ -149,7 +151,10 @@ function startRecording() {
               console.log("play");
 	      
               recorder.record(function(error) {
-              	if (error) return onError(error);
+              	if (error) {
+              		console.log("record error "+ error);
+			return onError(error);
+		}
               	console.log("record");
                 stopRecordButton.addEventListener("click", function(event){
                 	recorder.stop();
@@ -186,7 +191,7 @@ function startPlaying()
 
   var options = {
     remoteVideo: videoPlayer,
-    useEncodedMedia: false 
+    useEncodedMedia:true
   };
 
   if (args.ice_servers) {
