@@ -66,7 +66,7 @@ window.addEventListener('load', function(event) {
 function startRecording() {
   console.log("onClick");
 
-  var videoInput = document.getElementById("videoInput");
+  //var videoInput = document.getElementById("videoInput");
   var videoOutput = document.getElementById("videoOutput");
 
   showSpinner(videoOutput);
@@ -76,7 +76,7 @@ function startRecording() {
   var options = {
     //localVideo: videoInput,
     remoteVideo: videoOutput,
-    useEncodedMedia: false 
+    useEncodedMedia: true 
   };
 
   if (args.ice_servers) {
